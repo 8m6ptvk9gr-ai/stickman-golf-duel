@@ -24,7 +24,7 @@ const player2 = {
 };
 
 
-let balls=[];
+let balls = [];
 
 
 
@@ -35,11 +35,10 @@ class Ball {
         this.x=x;
         this.y=y;
 
-        // distance power
-        this.vx=power * direction;
+        this.vx = power * direction;
 
-        // launch angle
-        this.vy=-power * 1.25;
+        // higher launch
+        this.vy = -power * 1.15;
 
         this.radius=8;
 
@@ -50,31 +49,30 @@ class Ball {
 
     update(){
 
-        this.x+=this.vx;
+        this.x += this.vx;
 
-        this.y+=this.vy;
+        this.y += this.vy;
 
 
         // gravity
 
-        this.vy+=0.32;
+        this.vy += 0.32;
 
 
 
-        // ground
+        // ground bounce
 
-        if(this.y>=490){
+        if(this.y >= 490){
 
-            this.y=490;
+            this.y = 490;
 
-            this.vy*=-0.45;
+            this.vy *= -0.45;
 
             this.bounced=true;
 
         }
 
     }
-
 
 
     draw(){
@@ -101,53 +99,46 @@ class Ball {
 
 
 
-
 function calculatePower(player){
 
-    let holdTime =
-    Date.now()-player.chargeStart;
+    let hold =
+    (Date.now()-player.chargeStart)/1000;
 
 
-    let charge =
-    holdTime/1000;
+    let power;
 
-
-    let distance;
 
 
     // weak shots
 
-    if(charge < 1.2){
+    if(hold < 1){
 
-        distance =
-        5 + charge*5;
+        power = 5 + hold*4;
+
+    }
+
+
+
+    // wider sweet spot
+
+    else if(hold < 2.5){
+
+        power = 10 + (hold-1)*1.5;
 
     }
 
-
-    // SWEET SPOT
-    // wider and easier
-
-    else if(charge < 2.2){
-
-        distance =
-        11 + (charge-1.2)*2;
-
-    }
 
 
     // overpowered shots
 
     else{
 
-        distance =
-        13 +
-        (charge-2.2)*4;
+        power = 14 + (hold-2.5)*5;
 
     }
 
 
-    return Math.min(distance,22);
+    return Math.min(power,22);
 
 }
 
@@ -157,7 +148,6 @@ function calculatePower(player){
 
 
 function swing(player,direction){
-
 
     if(!player.charging)
     return;
@@ -171,12 +161,10 @@ function swing(player,direction){
     balls.push(
 
         new Ball(
-
             player.x,
             player.y-50,
             power,
             direction
-
         )
 
     );
@@ -202,8 +190,6 @@ e=>{
 
 
 
-    // PLAYER 1
-
     if(e.key==="a" && !player1.charging){
 
         player1.charging=true;
@@ -214,8 +200,6 @@ e=>{
 
 
 
-    // PLAYER 2
-
     if(e.key==="ArrowLeft" && !player2.charging){
 
         player2.charging=true;
@@ -225,8 +209,8 @@ e=>{
     }
 
 
-
 });
+
 
 
 
@@ -252,9 +236,7 @@ e=>{
     }
 
 
-
 });
-
 
 
 
@@ -265,9 +247,7 @@ e=>{
 
 function hitPlayer(target){
 
-
     target.flash=10;
-
 
 
     if(target.shield>0){
@@ -275,7 +255,6 @@ function hitPlayer(target){
         target.shield--;
 
     }
-
     else{
 
 
@@ -286,11 +265,11 @@ function hitPlayer(target){
 
             alert(
 
-            target===player1
-            ?
-            "Player 2 Wins!"
-            :
-            "Player 1 Wins!"
+                target===player1
+                ?
+                "Player 2 Wins!"
+                :
+                "Player 1 Wins!"
 
             );
 
@@ -299,8 +278,8 @@ function hitPlayer(target){
 
     }
 
-
 }
+
 
 
 
@@ -324,11 +303,9 @@ function checkHits(){
 
         if(
 
-        Math.abs(ball.x-player1.x)<40 &&
-
-        Math.abs(ball.y-player1.y)<90 &&
-
-        ball.vx<0
+            Math.abs(ball.x-player1.x)<40 &&
+            Math.abs(ball.y-player1.y)<90 &&
+            ball.vx<0
 
         ){
 
@@ -340,13 +317,12 @@ function checkHits(){
 
 
 
+
         if(
 
-        Math.abs(ball.x-player2.x)<40 &&
-
-        Math.abs(ball.y-player2.y)<90 &&
-
-        ball.vx>0
+            Math.abs(ball.x-player2.x)<40 &&
+            Math.abs(ball.y-player2.y)<90 &&
+            ball.vx>0
 
         ){
 
@@ -368,12 +344,14 @@ function checkHits(){
 
 
 
-function drawStickman(p){
+function drawStickman(player){
 
 
     ctx.lineWidth=5;
 
+
     ctx.strokeStyle="black";
+
 
 
     // head
@@ -381,8 +359,8 @@ function drawStickman(p){
     ctx.beginPath();
 
     ctx.arc(
-        p.x,
-        p.y-90,
+        player.x,
+        player.y-90,
         20,
         0,
         Math.PI*2
@@ -397,13 +375,13 @@ function drawStickman(p){
     ctx.beginPath();
 
     ctx.moveTo(
-        p.x,
-        p.y-70
+        player.x,
+        player.y-70
     );
 
     ctx.lineTo(
-        p.x,
-        p.y
+        player.x,
+        player.y
     );
 
     ctx.stroke();
@@ -415,26 +393,25 @@ function drawStickman(p){
     ctx.beginPath();
 
     ctx.moveTo(
-        p.x,
-        p.y
+        player.x,
+        player.y
     );
 
     ctx.lineTo(
-        p.x-20,
-        p.y+40
+        player.x-20,
+        player.y+40
     );
 
 
     ctx.moveTo(
-        p.x,
-        p.y
+        player.x,
+        player.y
     );
 
     ctx.lineTo(
-        p.x+20,
-        p.y+40
+        player.x+20,
+        player.y+40
     );
-
 
     ctx.stroke();
 
@@ -443,7 +420,7 @@ function drawStickman(p){
     // shield
 
     ctx.strokeStyle =
-    p.flash>0
+    player.flash>0
     ?
     "white"
     :
@@ -453,8 +430,8 @@ function drawStickman(p){
     ctx.beginPath();
 
     ctx.arc(
-        p.x,
-        p.y-40,
+        player.x,
+        player.y-40,
         55,
         0,
         Math.PI*2
@@ -464,8 +441,8 @@ function drawStickman(p){
 
 
 
-    if(p.flash>0)
-    p.flash--;
+    if(player.flash>0)
+    player.flash--;
 
 }
 
@@ -492,10 +469,12 @@ function update(){
 
     balls =
     balls.filter(
-        ball=>
+
+        ball =>
         ball.x>-200 &&
         ball.x<1400 &&
         ball.y<700
+
     );
 
 
@@ -509,21 +488,36 @@ function update(){
 
 
 
-    // power meter
+    let power1=0;
+    let power2=0;
 
-    let power=0;
 
 
     if(player1.charging){
 
-        power =
-        (Date.now()-player1.chargeStart)/1200;
+        power1 =
+        (Date.now()-player1.chargeStart)/2500;
 
     }
 
 
-    document.getElementById("power").style.width =
-    Math.min(power*100,100)+"%";
+
+    if(player2.charging){
+
+        power2 =
+        (Date.now()-player2.chargeStart)/2500;
+
+    }
+
+
+
+    document.getElementById("power1").style.width =
+    Math.min(power1*100,100)+"%";
+
+
+    document.getElementById("power2").style.width =
+    Math.min(power2*100,100)+"%";
+
 
 }
 
