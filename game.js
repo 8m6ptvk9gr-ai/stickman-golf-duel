@@ -10,7 +10,8 @@ const player1 = {
     shield:10,
     charging:false,
     chargeStart:0,
-    flash:0
+    flash:0,
+    velocityY:0
 };
 
 
@@ -20,25 +21,88 @@ const player2 = {
     shield:10,
     charging:false,
     chargeStart:0,
-    flash:0
+    flash:0,
+    velocityY:0
 };
 
 
-let balls = [];
+let balls=[];
+
+
+// keyboard state
+
+let keys={};
+
+document.addEventListener("keydown", e=>{
+
+    keys[e.key]=true;
+
+
+    if(gameOver) return;
+
+
+    // Player 1 charge
+
+    if(e.key==="a" && !player1.charging){
+
+        player1.charging=true;
+        player1.chargeStart=Date.now();
+
+    }
+
+
+    // Player 2 charge
+
+    if(e.key==="ArrowLeft" && !player2.charging){
+
+        player2.charging=true;
+        player2.chargeStart=Date.now();
+
+    }
+
+
+});
+
+
+document.addEventListener("keyup", e=>{
+
+
+    keys[e.key]=false;
+
+
+    // release swing
+
+    if(e.key==="a"){
+
+        swing(player1,1);
+
+    }
+
+
+    if(e.key==="ArrowLeft"){
+
+        swing(player2,-1);
+
+    }
+
+
+});
+
+
 
 
 
 class Ball {
+
 
     constructor(x,y,power,direction){
 
         this.x=x;
         this.y=y;
 
-        this.vx = power * direction;
+        this.vx=power*direction;
 
-        // higher launch
-        this.vy = -power * 1.15;
+        this.vy=-power*1.15;
 
         this.radius=8;
 
@@ -47,32 +111,30 @@ class Ball {
     }
 
 
+
     update(){
 
-        this.x += this.vx;
+        this.x+=this.vx;
 
-        this.y += this.vy;
+        this.y+=this.vy;
 
 
-        // gravity
-
-        this.vy += 0.32;
+        this.vy+=0.32;
 
 
 
-        // ground bounce
+        if(this.y>=490){
 
-        if(this.y >= 490){
+            this.y=490;
 
-            this.y = 490;
-
-            this.vy *= -0.45;
+            this.vy*=-0.45;
 
             this.bounced=true;
 
         }
 
     }
+
 
 
     draw(){
@@ -99,7 +161,10 @@ class Ball {
 
 
 
+
+
 function calculatePower(player){
+
 
     let hold =
     (Date.now()-player.chargeStart)/1000;
@@ -108,32 +173,29 @@ function calculatePower(player){
     let power;
 
 
+    // weak
 
-    // weak shots
+    if(hold<1){
 
-    if(hold < 1){
-
-        power = 5 + hold*4;
-
-    }
-
-
-
-    // wider sweet spot
-
-    else if(hold < 2.5){
-
-        power = 10 + (hold-1)*1.5;
+        power=5+hold*4;
 
     }
 
 
+    // sweet spot
 
-    // overpowered shots
+    else if(hold<2.5){
+
+        power=10+(hold-1)*1.5;
+
+    }
+
+
+    // too strong
 
     else{
 
-        power = 14 + (hold-2.5)*5;
+        power=14+(hold-2.5)*5;
 
     }
 
@@ -147,15 +209,15 @@ function calculatePower(player){
 
 
 
+
 function swing(player,direction){
+
 
     if(!player.charging)
     return;
 
 
-    let power =
-    calculatePower(player);
-
+    let power=calculatePower(player);
 
 
     balls.push(
@@ -180,63 +242,76 @@ function swing(player,direction){
 
 
 
-document.addEventListener(
-"keydown",
-e=>{
+
+function updatePlayers(){
 
 
-    if(gameOver)
-    return;
+    // gravity
+
+    player1.velocityY+=0.25;
+    player2.velocityY+=0.25;
 
 
 
-    if(e.key==="a" && !player1.charging){
+    // floating
 
-        player1.charging=true;
+    if(keys["w"]){
 
-        player1.chargeStart=Date.now();
+        player1.velocityY-=0.45;
+
+    }
+
+
+    if(keys["ArrowUp"]){
+
+        player2.velocityY-=0.45;
 
     }
 
 
 
-    if(e.key==="ArrowLeft" && !player2.charging){
+    player1.y+=player1.velocityY;
+    player2.y+=player2.velocityY;
 
-        player2.charging=true;
 
-        player2.chargeStart=Date.now();
+
+    // limits
+
+
+    if(player1.y<150){
+
+        player1.y=150;
+        player1.velocityY=0;
 
     }
 
 
-});
+    if(player2.y<150){
 
-
-
-
-
-
-document.addEventListener(
-"keyup",
-e=>{
-
-
-    if(e.key==="a"){
-
-        swing(player1,1);
+        player2.y=150;
+        player2.velocityY=0;
 
     }
 
 
 
-    if(e.key==="ArrowLeft"){
+    if(player1.y>450){
 
-        swing(player2,-1);
+        player1.y=450;
+        player1.velocityY=0;
 
     }
 
 
-});
+    if(player2.y>450){
+
+        player2.y=450;
+        player2.velocityY=0;
+
+    }
+
+
+}
 
 
 
@@ -247,6 +322,7 @@ e=>{
 
 function hitPlayer(target){
 
+
     target.flash=10;
 
 
@@ -255,6 +331,7 @@ function hitPlayer(target){
         target.shield--;
 
     }
+
     else{
 
 
@@ -265,21 +342,21 @@ function hitPlayer(target){
 
             alert(
 
-                target===player1
-                ?
-                "Player 2 Wins!"
-                :
-                "Player 1 Wins!"
+            target===player1
+            ?
+            "Player 2 Wins!"
+            :
+            "Player 1 Wins!"
 
             );
 
 
         },100);
 
+
     }
 
 }
-
 
 
 
@@ -294,7 +371,7 @@ function checkHits(){
     balls.forEach(ball=>{
 
 
-        // bounced balls cannot damage
+        // bounced balls harmless
 
         if(ball.bounced)
         return;
@@ -303,9 +380,9 @@ function checkHits(){
 
         if(
 
-            Math.abs(ball.x-player1.x)<40 &&
-            Math.abs(ball.y-player1.y)<90 &&
-            ball.vx<0
+        Math.abs(ball.x-player1.x)<40 &&
+        Math.abs(ball.y-player1.y)<90 &&
+        ball.vx<0
 
         ){
 
@@ -320,9 +397,9 @@ function checkHits(){
 
         if(
 
-            Math.abs(ball.x-player2.x)<40 &&
-            Math.abs(ball.y-player2.y)<90 &&
-            ball.vx>0
+        Math.abs(ball.x-player2.x)<40 &&
+        Math.abs(ball.y-player2.y)<90 &&
+        ball.vx>0
 
         ){
 
@@ -335,6 +412,7 @@ function checkHits(){
 
     });
 
+
 }
 
 
@@ -344,11 +422,10 @@ function checkHits(){
 
 
 
-function drawStickman(player){
+function drawStickman(p){
 
 
     ctx.lineWidth=5;
-
 
     ctx.strokeStyle="black";
 
@@ -359,8 +436,8 @@ function drawStickman(player){
     ctx.beginPath();
 
     ctx.arc(
-        player.x,
-        player.y-90,
+        p.x,
+        p.y-90,
         20,
         0,
         Math.PI*2
@@ -375,13 +452,13 @@ function drawStickman(player){
     ctx.beginPath();
 
     ctx.moveTo(
-        player.x,
-        player.y-70
+        p.x,
+        p.y-70
     );
 
     ctx.lineTo(
-        player.x,
-        player.y
+        p.x,
+        p.y
     );
 
     ctx.stroke();
@@ -393,25 +470,26 @@ function drawStickman(player){
     ctx.beginPath();
 
     ctx.moveTo(
-        player.x,
-        player.y
+        p.x,
+        p.y
     );
 
     ctx.lineTo(
-        player.x-20,
-        player.y+40
+        p.x-20,
+        p.y+40
     );
 
 
     ctx.moveTo(
-        player.x,
-        player.y
+        p.x,
+        p.y
     );
 
     ctx.lineTo(
-        player.x+20,
-        player.y+40
+        p.x+20,
+        p.y+40
     );
+
 
     ctx.stroke();
 
@@ -420,7 +498,7 @@ function drawStickman(player){
     // shield
 
     ctx.strokeStyle =
-    player.flash>0
+    p.flash>0
     ?
     "white"
     :
@@ -430,19 +508,20 @@ function drawStickman(player){
     ctx.beginPath();
 
     ctx.arc(
-        player.x,
-        player.y-40,
+        p.x,
+        p.y-40,
         55,
         0,
         Math.PI*2
     );
 
+
     ctx.stroke();
 
 
 
-    if(player.flash>0)
-    player.flash--;
+    if(p.flash>0)
+    p.flash--;
 
 }
 
@@ -454,6 +533,9 @@ function drawStickman(player){
 
 
 function update(){
+
+
+    updatePlayers();
 
 
 
@@ -479,11 +561,11 @@ function update(){
 
 
 
-    document.getElementById("shield1").textContent =
+    document.getElementById("shield1").textContent=
     player1.shield;
 
 
-    document.getElementById("shield2").textContent =
+    document.getElementById("shield2").textContent=
     player2.shield;
 
 
@@ -495,7 +577,7 @@ function update(){
 
     if(player1.charging){
 
-        power1 =
+        power1=
         (Date.now()-player1.chargeStart)/2500;
 
     }
@@ -504,18 +586,18 @@ function update(){
 
     if(player2.charging){
 
-        power2 =
+        power2=
         (Date.now()-player2.chargeStart)/2500;
 
     }
 
 
 
-    document.getElementById("power1").style.width =
+    document.getElementById("power1").style.width=
     Math.min(power1*100,100)+"%";
 
 
-    document.getElementById("power2").style.width =
+    document.getElementById("power2").style.width=
     Math.min(power2*100,100)+"%";
 
 
@@ -562,7 +644,6 @@ function draw(){
     );
 
 }
-
 
 
 
