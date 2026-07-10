@@ -334,105 +334,63 @@ draw(){
 
 function calculatePower(player){
 
-
     let hold =
     (Date.now()-player.chargeStart)/1000;
 
 
+    // More charge = more rocket thrust
 
-    let power;
-
-
-
-    if(hold<1){
-
-        power=5+hold*4;
-
-    }
+    let power =
+    8 + (hold * 5);
 
 
-    else if(hold<2.5){
+    // maximum rocket power
 
-        power=10+(hold-1)*1.5;
-
-    }
-
-
-    else{
-
-        power=14+(hold-2.5)*5;
-
-    }
-
-
-
-    return Math.min(power,22);
-
+    return Math.min(power,28);
 
 }
-
-
-
-
-
-
-
 
 function updateAim(){
 
 
     if(player1.charging){
 
-
         let hold =
         (Date.now()-player1.chargeStart)/1000;
 
 
-
         player1.angle =
         Math.min(
-            hold*0.45,
-            1.0
+            hold*0.35,
+            1.15
         );
 
-
     }
-
-    else{
-
-        player1.angle=0;
-
-    }
-
-
 
 
 
     if(player2.charging){
 
-
         let hold =
         (Date.now()-player2.chargeStart)/1000;
 
 
-
         player2.angle =
         Math.min(
-            hold*0.45,
-            1.0
+            hold*0.35,
+            1.15
         );
-
-
-    }
-
-    else{
-
-        player2.angle=0;
 
     }
 
 
 }
+
+
+
+
+
+
 
 
 
