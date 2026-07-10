@@ -2,67 +2,94 @@ HTML
 
 <!DOCTYPE html>
 <html>
+
 <head>
-    <title>Stickman Golf Duel</title>
-    <link rel="stylesheet" href="style.css">
+<title>Stickman Golf Duel</title>
+<link rel="stylesheet" href="style.css">
 </head>
+
 
 <body>
 
 <h1>🏌️ Stickman Golf Duel ⚔️</h1>
 
+
 <div id="score">
-    <div>
-        Player 1 Shield:
-        <span id="shield1">10</span>
-    </div>
 
-    <div>
-        Player 2 Shield:
-        <span id="shield2">10</span>
-    </div>
+<div>
+Player 1 Shield:
+<span id="shield1">10</span>
 </div>
 
 
-<div id="powerBox">
-
-    <div>
-        Player 1 Swing
-        <div id="meter">
-            <div id="power1"></div>
-        </div>
-    </div>
-
-
-    <div>
-        Player 2 Swing
-        <div id="meter">
-            <div id="power2"></div>
-        </div>
-    </div>
+<div>
+Player 2 Shield:
+<span id="shield2">10</span>
+</div>
 
 </div>
+
+
+<div id="powers">
+
+
+<div>
+Player 1 Power
+<div id="meter">
+<div id="power1"></div>
+</div>
+
+Explosions:
+<span id="explode1">3</span>
+
+</div>
+
+
+
+<div>
+Player 2 Power
+<div id="meter">
+<div id="power2"></div>
+</div>
+
+Explosions:
+<span id="explode2">3</span>
+
+</div>
+
+
+</div>
+
 
 
 <canvas id="gameCanvas" width="1200" height="600"></canvas>
 
 
 <p>
+
 Player 1:
-<b>A</b> = backswing |
-<b>D</b> = hit
 <br>
+W = Float |
+A = Charge/Shoot |
+E = Explosion
+
+<br><br>
 
 Player 2:
-<b>←</b> = backswing |
-<b>→</b> = hit
+<br>
+↑ = Float |
+← = Charge/Shoot |
+Enter = Explosion
+
 </p>
 
 
 <button onclick="restartGame()">Restart</button>
 
 
+
 <script src="game.js"></script>
 
 </body>
+
 </html>
