@@ -12,8 +12,7 @@ const player1={
     chargeStart:0,
     flash:0,
     velocityY:0,
-    explosions:3,
-    explodeReady:false
+    explosions:3
 };
 
 
@@ -25,15 +24,15 @@ const player2={
     chargeStart:0,
     flash:0,
     velocityY:0,
-    explosions:3,
-    explodeReady:false
+    explosions:3
 };
 
 
 let balls=[];
 
-
 let keys={};
+
+
 
 
 
@@ -42,10 +41,10 @@ document.addEventListener("keydown",e=>{
     keys[e.key]=true;
 
 
-    if(gameOver)return;
+    if(gameOver) return;
 
 
-    // Player 1 charge
+    // charge
 
     if(e.key==="a" && !player1.charging){
 
@@ -54,9 +53,6 @@ document.addEventListener("keydown",e=>{
 
     }
 
-
-
-    // Player 2 charge
 
     if(e.key==="ArrowLeft" && !player2.charging){
 
@@ -67,24 +63,24 @@ document.addEventListener("keydown",e=>{
 
 
 
-    // explosion buttons
+    // mid flight explosion
 
-    if(e.key==="e" && player1.explosions>0){
+    if(e.key==="e"){
 
-        player1.explodeReady=true;
+        tryExplode(player1,1);
 
     }
 
 
+    if(e.key==="Enter"){
 
-    if(e.key==="Enter" && player2.explosions>0){
-
-        player2.explodeReady=true;
+        tryExplode(player2,-1);
 
     }
 
 
 });
+
 
 
 
@@ -140,7 +136,12 @@ constructor(x,y,power,direction){
 
     this.bounced=false;
 
+    this.dead=false;
+
+
 }
+
+
 
 
 
@@ -163,12 +164,16 @@ update(){
 
         this.vy*=-0.45;
 
+
         this.bounced=true;
+
 
     }
 
 
 }
+
+
 
 
 
@@ -189,14 +194,15 @@ draw(){
 
     ctx.fillStyle="white";
 
+
     ctx.fill();
 
 
 }
 
 
-}
 
+}
 
 
 
@@ -209,7 +215,7 @@ draw(){
 function calculatePower(player){
 
 
-let hold =
+let hold=
 (Date.now()-player.chargeStart)/1000;
 
 
@@ -253,57 +259,6 @@ return Math.min(power,22);
 
 
 
-function explodeShot(player,direction,power){
-
-
-
-let angles=[
-
--1.0,
--0.45,
-0.45,
-1.0
-
-];
-
-
-
-angles.forEach(angle=>{
-
-
-let ball=new Ball(
-
-player.x,
-player.y-50,
-power,
-direction
-
-);
-
-
-
-ball.vy += angle*power;
-
-
-
-balls.push(ball);
-
-
-
-});
-
-
-}
-
-
-
-
-
-
-
-
-
-
 function swing(player,direction){
 
 
@@ -316,42 +271,132 @@ let power=calculatePower(player);
 
 
 
-if(player.explodeReady && player.explosions>0){
+balls.push(
 
+new Ball(
+player.x,
+player.y-50,
+power,
+direction
+)
 
-    explodeShot(
-        player,
-        direction,
-        power
-    );
-
-
-    player.explosions--;
-
-    player.explodeReady=false;
-
-
-}
-
-else{
-
-
-    balls.push(
-
-        new Ball(
-            player.x,
-            player.y-50,
-            power,
-            direction
-        )
-
-    );
-
-}
+);
 
 
 
 player.charging=false;
+
+
+}
+
+
+
+
+
+
+
+
+
+function tryExplode(player,direction){
+
+
+if(player.explosions<=0)
+return;
+
+
+
+for(let ball of balls){
+
+
+
+    if(
+        !ball.dead &&
+        !ball.bounced &&
+        (
+        direction===1 && ball.vx>0 ||
+        direction===-1 && ball.vx<0
+        )
+
+    ){
+
+
+        splitBall(ball,player);
+
+
+        return;
+
+
+    }
+
+
+}
+
+
+}
+
+
+
+
+
+
+
+
+
+function splitBall(ball,player){
+
+
+player.explosions--;
+
+
+let newBalls=[];
+
+
+
+let angles=[
+
+-8,
+-3,
+3,
+8
+
+];
+
+
+
+angles.forEach(angle=>{
+
+
+let split=new Ball(
+
+ball.x,
+ball.y,
+Math.abs(ball.vx),
+ball.vx>0 ? 1 : -1
+
+);
+
+
+
+split.vy =
+ball.vy + angle;
+
+
+
+split.bounced=false;
+
+
+
+newBalls.push(split);
+
+
+});
+
+
+
+ball.dead=true;
+
+
+balls.push(...newBalls);
 
 
 }
@@ -447,12 +492,9 @@ function hitPlayer(target){
 target.flash=10;
 
 
-
 if(target.shield>0){
 
-
 target.shield--;
-
 
 }
 
@@ -482,7 +524,6 @@ target===player1
 }
 
 
-
 }
 
 
@@ -496,12 +537,12 @@ target===player1
 function checkHits(){
 
 
-
 balls.forEach(ball=>{
 
 
-if(ball.bounced)
+if(ball.dead || ball.bounced)
 return;
+
 
 
 
@@ -516,11 +557,10 @@ ball.vx<0
 
 hitPlayer(player1);
 
-ball.x=-2000;
+ball.dead=true;
 
 
 }
-
 
 
 
@@ -536,14 +576,14 @@ ball.vx>0
 
 hitPlayer(player2);
 
-ball.x=2000;
+ball.dead=true;
 
 
 }
 
 
-});
 
+});
 
 
 }
@@ -608,6 +648,7 @@ p.y+40
 );
 
 
+
 ctx.moveTo(
 p.x,
 p.y
@@ -627,7 +668,6 @@ ctx.stroke();
 // shield
 
 ctx.strokeStyle=
-
 p.flash>0
 ?
 "white"
@@ -636,7 +676,6 @@ p.flash>0
 
 
 ctx.beginPath();
-
 
 ctx.arc(
 p.x,
@@ -685,11 +724,11 @@ checkHits();
 balls=
 balls.filter(
 ball=>
+!ball.dead &&
 ball.x>-200 &&
 ball.x<1400 &&
 ball.y<700
 );
-
 
 
 
@@ -708,8 +747,6 @@ player1.explosions;
 
 document.getElementById("explode2").textContent=
 player2.explosions;
-
-
 
 
 
@@ -737,7 +774,6 @@ power2=
 
 
 
-
 document.getElementById("power1").style.width=
 Math.min(power1*100,100)+"%";
 
@@ -747,7 +783,6 @@ Math.min(power2*100,100)+"%";
 
 
 }
-
 
 
 
@@ -790,7 +825,6 @@ ball=>ball.draw()
 );
 
 
-
 }
 
 
@@ -821,4 +855,3 @@ location.reload();
 
 
 loop();
- 
