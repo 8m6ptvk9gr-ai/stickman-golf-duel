@@ -1,64 +1,97 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-let gameOver=false;
+let gameOver = false;
 
-let particles=[];
+let particles = [];
+let balls = [];
+
+let keys = {};
 
 
-const player1={
+
+const player1 = {
+
     x:150,
     y:450,
+
     shield:10,
+
     charging:false,
     chargeStart:0,
-    flash:0,
+
     velocityY:0,
-    explosions:3
+
+    flash:0,
+
+    explosions:3,
+
+    angle:0
+
 };
 
 
-const player2={
+
+const player2 = {
+
     x:1050,
     y:450,
+
     shield:10,
+
     charging:false,
     chargeStart:0,
-    flash:0,
+
     velocityY:0,
-    explosions:3
+
+    flash:0,
+
+    explosions:3,
+
+    angle:0
+
 };
 
 
-let balls=[];
-
-let keys={};
 
 
 
-document.addEventListener("keydown",e=>{
+
+document.addEventListener("keydown", e=>{
+
 
     keys[e.key]=true;
 
 
-    if(gameOver)return;
+    if(gameOver) return;
 
+
+
+    // Player 1 charge
 
     if(e.key==="a" && !player1.charging){
 
         player1.charging=true;
+
         player1.chargeStart=Date.now();
 
     }
 
 
+
+    // Player 2 charge
+
     if(e.key==="ArrowLeft" && !player2.charging){
 
         player2.charging=true;
+
         player2.chargeStart=Date.now();
 
     }
 
+
+
+    // split rocket
 
     if(e.key==="e"){
 
@@ -67,13 +100,17 @@ document.addEventListener("keydown",e=>{
     }
 
 
+
     if(e.key==="Enter"){
 
         tryExplode(player2,-1);
 
     }
 
+
 });
+
+
 
 
 
@@ -84,11 +121,13 @@ document.addEventListener("keyup",e=>{
     keys[e.key]=false;
 
 
+
     if(e.key==="a"){
 
         swing(player1,1);
 
     }
+
 
 
     if(e.key==="ArrowLeft"){
@@ -105,30 +144,49 @@ document.addEventListener("keyup",e=>{
 
 
 
-class Ball{
+class Ball {
 
 
-constructor(x,y,power,direction){
+constructor(x,y,power,direction,angle){
 
 
     this.x=x;
+
     this.y=y;
 
-    this.vx=power*direction;
 
-    this.vy=-power*1.15;
 
-    this.radius=8;
+    this.vx =
+    Math.cos(angle)
+    *
+    power
+    *
+    direction;
+
+
+
+    this.vy =
+    -Math.sin(angle)
+    *
+    power;
+
+
 
     this.bounced=false;
 
     this.dead=false;
 
+
 }
 
 
 
+
+
+
+
 update(){
+
 
     this.x+=this.vx;
 
@@ -138,17 +196,26 @@ update(){
     this.vy+=0.32;
 
 
+
     if(this.y>=490){
+
 
         this.y=490;
 
+
         this.vy*=-0.45;
+
 
         this.bounced=true;
 
+
     }
 
+
 }
+
+
+
 
 
 
@@ -164,14 +231,14 @@ draw(){
     );
 
 
-    let angle=
+    let rot =
     Math.atan2(
         this.vy,
         this.vx
     );
 
 
-    ctx.rotate(angle);
+    ctx.rotate(rot);
 
 
 
@@ -182,23 +249,32 @@ draw(){
     ctx.fillRect(
         -10,
         -4,
-        22,
+        25,
         8
     );
 
 
 
-    // rocket nose
+    // nose
 
     ctx.fillStyle="red";
 
     ctx.beginPath();
 
-    ctx.moveTo(12,0);
+    ctx.moveTo(
+        15,
+        0
+    );
 
-    ctx.lineTo(22,-6);
+    ctx.lineTo(
+        25,
+        -7
+    );
 
-    ctx.lineTo(22,6);
+    ctx.lineTo(
+        25,
+        7
+    );
 
     ctx.closePath();
 
@@ -212,11 +288,20 @@ draw(){
 
     ctx.beginPath();
 
-    ctx.moveTo(-10,0);
+    ctx.moveTo(
+        -10,
+        0
+    );
 
-    ctx.lineTo(-20,-5);
+    ctx.lineTo(
+        -25,
+        -5
+    );
 
-    ctx.lineTo(-20,5);
+    ctx.lineTo(
+        -25,
+        5
+    );
 
     ctx.closePath();
 
@@ -244,15 +329,19 @@ draw(){
 }
 
 
+
 }
 
 function calculatePower(player){
+
 
     let hold =
     (Date.now()-player.chargeStart)/1000;
 
 
+
     let power;
+
 
 
     if(hold<1){
@@ -260,11 +349,15 @@ function calculatePower(player){
         power=5+hold*4;
 
     }
+
+
     else if(hold<2.5){
 
         power=10+(hold-1)*1.5;
 
     }
+
+
     else{
 
         power=14+(hold-2.5)*5;
@@ -272,9 +365,253 @@ function calculatePower(player){
     }
 
 
+
     return Math.min(power,22);
 
+
 }
+
+
+
+
+
+
+
+
+function updateAim(){
+
+
+    if(player1.charging){
+
+
+        let hold =
+        (Date.now()-player1.chargeStart)/1000;
+
+
+
+        player1.angle =
+        Math.min(
+            hold*0.45,
+            1.0
+        );
+
+
+    }
+
+    else{
+
+        player1.angle=0;
+
+    }
+
+
+
+
+
+    if(player2.charging){
+
+
+        let hold =
+        (Date.now()-player2.chargeStart)/1000;
+
+
+
+        player2.angle =
+        Math.min(
+            hold*0.45,
+            1.0
+        );
+
+
+    }
+
+    else{
+
+        player2.angle=0;
+
+    }
+
+
+}
+
+
+
+
+
+
+
+
+
+function swing(player,direction){
+
+
+    if(!player.charging)
+    return;
+
+
+
+    let power =
+    calculatePower(player);
+
+
+
+    createExplosion(
+        player.x+(70*direction),
+        player.y-55
+    );
+
+
+
+    balls.push(
+
+        new Ball(
+
+            player.x,
+
+            player.y-55,
+
+            power,
+
+            direction,
+
+            player.angle
+
+        )
+
+    );
+
+
+
+    player.charging=false;
+
+
+}
+
+
+
+
+
+
+
+
+
+function tryExplode(player,direction){
+
+
+    if(player.explosions<=0)
+    return;
+
+
+
+    for(let ball of balls){
+
+
+        if(
+
+        !ball.dead &&
+        !ball.bounced &&
+
+        (
+
+        direction===1 && ball.vx>0
+
+        ||
+
+        direction===-1 && ball.vx<0
+
+        )
+
+        ){
+
+
+            splitBall(ball,player);
+
+
+            return;
+
+
+        }
+
+
+    }
+
+
+}
+
+
+
+
+
+
+
+
+
+function splitBall(ball,player){
+
+
+
+    player.explosions--;
+
+
+
+    let angles=[
+
+        -10,
+        -4,
+         4,
+        10
+
+    ];
+
+
+
+    angles.forEach(a=>{
+
+
+        let rocket =
+        new Ball(
+
+            ball.x,
+
+            ball.y,
+
+            Math.abs(ball.vx),
+
+            ball.vx>0 ? 1 : -1,
+
+            0
+
+        );
+
+
+
+        rocket.vy =
+        ball.vy+a;
+
+
+
+        balls.push(rocket);
+
+
+
+    });
+
+
+
+
+    createExplosion(
+        ball.x,
+        ball.y
+    );
+
+
+
+    ball.dead=true;
+
+
+}
+
+
 
 
 
@@ -317,153 +654,6 @@ function createExplosion(x,y){
 
 
 
-function swing(player,direction){
-
-
-    if(!player.charging)
-    return;
-
-
-
-    let power=calculatePower(player);
-
-
-
-    createExplosion(
-        player.x+(70*direction),
-        player.y-55
-    );
-
-
-
-    balls.push(
-
-        new Ball(
-            player.x,
-            player.y-55,
-            power,
-            direction
-        )
-
-    );
-
-
-    player.charging=false;
-
-
-}
-
-
-
-
-
-
-
-
-function tryExplode(player,direction){
-
-
-    if(player.explosions<=0)
-    return;
-
-
-
-    for(let ball of balls){
-
-
-        if(
-
-        !ball.dead &&
-        !ball.bounced &&
-        (
-        direction===1 && ball.vx>0 ||
-        direction===-1 && ball.vx<0
-        )
-
-        ){
-
-
-            splitBall(ball,player);
-
-            return;
-
-        }
-
-
-    }
-
-
-}
-
-
-
-
-
-
-
-
-
-function splitBall(ball,player){
-
-
-    player.explosions--;
-
-
-    let angles=[
-
-    -8,
-    -3,
-     3,
-     8
-
-    ];
-
-
-
-    angles.forEach(angle=>{
-
-
-        let rocket=new Ball(
-
-            ball.x,
-            ball.y,
-            Math.abs(ball.vx),
-            ball.vx>0 ? 1 : -1
-
-        );
-
-
-
-        rocket.vy =
-        ball.vy + angle;
-
-
-
-        balls.push(rocket);
-
-
-    });
-
-
-
-    createExplosion(
-        ball.x,
-        ball.y
-    );
-
-
-    ball.dead=true;
-
-
-}
-
-
-
-
-
-
-
-
 
 function updatePlayers(){
 
@@ -471,6 +661,7 @@ function updatePlayers(){
     player1.velocityY+=0.25;
 
     player2.velocityY+=0.25;
+
 
 
 
@@ -487,6 +678,7 @@ function updatePlayers(){
         player2.velocityY-=0.45;
 
     }
+
 
 
 
@@ -532,21 +724,13 @@ function updatePlayers(){
     }
 
 
+
 }
-
-
-
-
-
-
-
-
 
 function hitPlayer(target){
 
 
     target.flash=10;
-
 
 
     createExplosion(
@@ -601,50 +785,58 @@ function hitPlayer(target){
 function checkHits(){
 
 
-balls.forEach(ball=>{
+    balls.forEach(ball=>{
 
 
-    if(ball.dead || ball.bounced)
-    return;
-
-
-
-
-    if(
-
-    Math.abs(ball.x-player1.x)<40 &&
-    Math.abs(ball.y-player1.y)<90 &&
-    ball.vx<0
-
-    ){
-
-        hitPlayer(player1);
-
-        ball.dead=true;
-
-    }
+        if(ball.dead || ball.bounced)
+        return;
 
 
 
 
+        if(
 
-    if(
+        Math.abs(ball.x-player1.x)<40 &&
 
-    Math.abs(ball.x-player2.x)<40 &&
-    Math.abs(ball.y-player2.y)<90 &&
-    ball.vx>0
+        Math.abs(ball.y-player1.y)<90 &&
 
-    ){
+        ball.vx<0
 
-        hitPlayer(player2);
-
-        ball.dead=true;
-
-    }
+        ){
 
 
+            hitPlayer(player1);
 
-});
+            ball.dead=true;
+
+
+        }
+
+
+
+
+
+        if(
+
+        Math.abs(ball.x-player2.x)<40 &&
+
+        Math.abs(ball.y-player2.y)<90 &&
+
+        ball.vx>0
+
+        ){
+
+
+            hitPlayer(player2);
+
+            ball.dead=true;
+
+
+        }
+
+
+
+    });
 
 
 }
@@ -658,6 +850,12 @@ balls.forEach(ball=>{
 
 
 function drawSoldier(p){
+
+
+
+    let facing =
+    p===player1 ? 1 : -1;
+
 
 
     ctx.lineWidth=5;
@@ -682,7 +880,27 @@ function drawSoldier(p){
 
 
 
-    // body
+
+    // helmet visor
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        p.x-20,
+        p.y-110
+    );
+
+    ctx.lineTo(
+        p.x+20,
+        p.y-110
+    );
+
+    ctx.stroke();
+
+
+
+
+    // body armour
 
     ctx.beginPath();
 
@@ -697,6 +915,7 @@ function drawSoldier(p){
     );
 
     ctx.stroke();
+
 
 
 
@@ -730,49 +949,75 @@ function drawSoldier(p){
 
 
 
-    // arms holding bazooka
 
-    ctx.beginPath();
 
-    ctx.moveTo(
+    // bazooka angle
+
+    ctx.save();
+
+
+    ctx.translate(
         p.x,
         p.y-55
     );
 
-    ctx.lineTo(
-        p.x+35,
-        p.y-55
+
+
+    ctx.rotate(
+        -p.angle*facing
     );
 
-    ctx.stroke();
 
-
-
-    // bazooka
 
     ctx.lineWidth=8;
 
     ctx.beginPath();
 
+
     ctx.moveTo(
-        p.x+25,
-        p.y-55
+        10*facing,
+        0
     );
 
+
     ctx.lineTo(
-        p.x+80,
-        p.y-55
+        80*facing,
+        0
+    );
+
+
+    ctx.stroke();
+
+
+
+    // bazooka end
+
+    ctx.lineWidth=3;
+
+    ctx.beginPath();
+
+    ctx.arc(
+        85*facing,
+        0,
+        10,
+        0,
+        Math.PI*2
     );
 
     ctx.stroke();
 
 
 
+    ctx.restore();
+
+
+
+
+
+
     // shield
 
-    ctx.lineWidth=3;
-
-    ctx.strokeStyle=
+    ctx.strokeStyle =
     p.flash>0
     ?
     "white"
@@ -790,6 +1035,7 @@ function drawSoldier(p){
         Math.PI*2
     );
 
+
     ctx.stroke();
 
 
@@ -797,7 +1043,9 @@ function drawSoldier(p){
     if(p.flash>0)
     p.flash--;
 
+
 }
+
 
 
 
@@ -816,20 +1064,28 @@ function drawParticles(){
 
 
         ctx.arc(
+
             p.x,
+
             p.y,
+
             p.smoke ? 3 : 6,
+
             0,
+
             Math.PI*2
+
         );
 
 
-        ctx.fillStyle=
+
+        ctx.fillStyle =
         p.smoke
         ?
         "gray"
         :
         "orange";
+
 
 
         ctx.fill();
@@ -848,7 +1104,7 @@ function drawParticles(){
 
 
 
-    particles=
+    particles =
     particles.filter(
         p=>p.life>0
     );
@@ -863,10 +1119,14 @@ function drawParticles(){
 
 
 
+
 function update(){
 
 
     updatePlayers();
+
+
+    updateAim();
 
 
 
@@ -880,13 +1140,19 @@ function update(){
 
 
 
-    balls=
+    balls =
     balls.filter(
+
         ball=>
+
         !ball.dead &&
+
         ball.x>-200 &&
+
         ball.x<1400 &&
+
         ball.y<700
+
     );
 
 
@@ -899,12 +1165,14 @@ function update(){
     player2.shield;
 
 
+
     document.getElementById("explode1").textContent=
     player1.explosions;
 
 
     document.getElementById("explode2").textContent=
     player2.explosions;
+
 
 
 
@@ -932,15 +1200,19 @@ function update(){
 
 
 
+
     document.getElementById("power1").style.width=
     Math.min(power1*100,100)+"%";
+
 
 
     document.getElementById("power2").style.width=
     Math.min(power2*100,100)+"%";
 
 
+
 }
+
 
 
 
@@ -995,15 +1267,25 @@ function draw(){
 
 
 
+
+
 function loop(){
+
 
     update();
 
     draw();
 
+
     requestAnimationFrame(loop);
 
+
 }
+
+
+
+
+
 
 
 
