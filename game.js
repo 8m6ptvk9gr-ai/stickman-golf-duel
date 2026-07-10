@@ -1,29 +1,27 @@
 const canvas=document.getElementById("gameCanvas");
 const ctx=canvas.getContext("2d");
 
-
 let gameOver=false;
 
 
 const player1={
-x:150,
-y:450,
-shield:10,
-charging:false,
-chargeStart:0,
-flash:0
+    x:150,
+    y:450,
+    shield:10,
+    charging:false,
+    chargeStart:0,
+    flash:0
 };
 
 
 const player2={
-x:1050,
-y:450,
-shield:10,
-charging:false,
-chargeStart:0,
-flash:0
+    x:1050,
+    y:450,
+    shield:10,
+    charging:false,
+    chargeStart:0,
+    flash:0
 };
-
 
 
 let balls=[];
@@ -32,19 +30,21 @@ let balls=[];
 
 class Ball{
 
-
 constructor(x,y,power,direction){
 
 this.x=x;
 this.y=y;
 
-this.vx=power*direction;
-this.vy=-power/2;
+this.vx=power*direction*1.4;
+
+// more power = higher arc
+this.vy=-power*0.75;
 
 this.radius=8;
 
-}
+this.bounced=false;
 
+}
 
 
 update(){
@@ -53,17 +53,25 @@ this.x+=this.vx;
 
 this.y+=this.vy;
 
-this.vy+=0.25;
+
+// gravity
+
+this.vy+=0.35;
 
 
-//bounce
 
-if(this.y>490){
+// ground bounce
+
+if(this.y>=490){
 
 this.y=490;
-this.vy*=-0.6;
+
+this.vy*=-0.45;
+
+this.bounced=true;
 
 }
+
 
 
 }
@@ -98,14 +106,22 @@ ctx.fill();
 function shoot(player,direction){
 
 
-let time=Date.now()-player.chargeStart;
+let charge=
+Date.now()-player.chargeStart;
 
 
-let power=Math.min(time/100,12);
+
+let power=
+Math.min(
+charge/100,
+15
+);
 
 
-if(power<3)
-power=3;
+// minimum weak hit
+
+if(power<4)
+power=4;
 
 
 
@@ -113,7 +129,7 @@ balls.push(
 
 new Ball(
 player.x,
-player.y-30,
+player.y-40,
 power,
 direction
 )
@@ -124,6 +140,10 @@ direction
 player.charging=false;
 
 }
+
+
+
+
 
 
 
@@ -153,6 +173,7 @@ shoot(player1,1);
 
 
 
+
 if(e.key==="ArrowLeft"){
 
 player2.charging=true;
@@ -169,6 +190,7 @@ shoot(player2,-1);
 }
 
 
+
 });
 
 
@@ -177,8 +199,9 @@ shoot(player2,-1);
 
 
 
-function hit(target){
 
+
+function hit(target){
 
 target.flash=10;
 
@@ -191,12 +214,9 @@ target.shield--;
 
 else{
 
-
 gameOver=true;
 
-
 setTimeout(()=>{
-
 
 alert(
 target===player1
@@ -206,15 +226,13 @@ target===player1
 "Player 1 Wins!"
 );
 
-
 },100);
 
-
-
 }
 
 
 }
+
 
 
 
@@ -228,17 +246,24 @@ function checkHits(){
 balls.forEach(ball=>{
 
 
+// only direct airborne hits count
+
+if(ball.bounced)
+return;
+
+
+
 if(
 
 Math.abs(ball.x-player1.x)<35 &&
-Math.abs(ball.y-player1.y)<80 &&
+Math.abs(ball.y-player1.y)<70 &&
 ball.vx<0
 
 ){
 
 hit(player1);
 
-ball.x=-1000;
+ball.x=-2000;
 
 }
 
@@ -248,7 +273,7 @@ ball.x=-1000;
 if(
 
 Math.abs(ball.x-player2.x)<35 &&
-Math.abs(ball.y-player2.y)<80 &&
+Math.abs(ball.y-player2.y)<70 &&
 ball.vx>0
 
 ){
@@ -260,10 +285,12 @@ ball.x=2000;
 }
 
 
+
 });
 
 
 }
+
 
 
 
@@ -280,7 +307,6 @@ ctx.strokeStyle="black";
 ctx.lineWidth=5;
 
 
-//head
 
 ctx.beginPath();
 
@@ -295,7 +321,6 @@ Math.PI*2
 ctx.stroke();
 
 
-//body
 
 ctx.beginPath();
 
@@ -312,7 +337,6 @@ p.y
 ctx.stroke();
 
 
-//legs
 
 ctx.beginPath();
 
@@ -339,7 +363,8 @@ p.y+40
 ctx.stroke();
 
 
-//shield
+
+// shield
 
 ctx.strokeStyle=
 p.flash>0
@@ -362,10 +387,13 @@ Math.PI*2
 ctx.stroke();
 
 
+
 if(p.flash>0)
 p.flash--;
 
 }
+
+
 
 
 
@@ -382,26 +410,32 @@ b=>b.update()
 );
 
 
+
 checkHits();
+
 
 
 balls=
 balls.filter(
-b=>b.x>-100&&b.x<1300
+b=>
+b.x>-100 &&
+b.x<1300 &&
+b.y<700
 );
 
 
 
-document.getElementById("shield1").innerHTML=
+document.getElementById("shield1").textContent=
 player1.shield;
 
 
-document.getElementById("shield2").innerHTML=
+document.getElementById("shield2").textContent=
 player2.shield;
 
 
 
-let charging=
+
+let power=
 player1.charging
 ?
 (Date.now()-player1.chargeStart)/1200
@@ -410,7 +444,7 @@ player1.charging
 
 
 document.getElementById("power").style.width=
-Math.min(charging*100,100)+"%";
+Math.min(power*100,100)+"%";
 
 }
 
@@ -456,6 +490,8 @@ b=>b.draw()
 
 
 }
+
+
 
 
 
