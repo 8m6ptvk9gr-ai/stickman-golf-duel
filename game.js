@@ -1,210 +1,374 @@
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
+const canvas=document.getElementById("gameCanvas");
+const ctx=canvas.getContext("2d");
 
-const player1 = {
-    x:150,
-    y:450,
-    shield:10,
-    backswingTime:null
+
+let gameOver=false;
+
+
+const player1={
+x:150,
+y:450,
+shield:10,
+charging:false,
+chargeStart:0,
+flash:0
 };
 
-const player2 = {
-    x:1050,
-    y:450,
-    shield:10,
-    backswingTime:null
+
+const player2={
+x:1050,
+y:450,
+shield:10,
+charging:false,
+chargeStart:0,
+flash:0
 };
 
-let balls = [];
-let gameOver = false;
 
 
-class Ball {
-
-    constructor(x,y,vx){
-        this.x=x;
-        this.y=y;
-        this.vx=vx;
-        this.radius=8;
-    }
-
-    update(){
-        this.x += this.vx;
-    }
-
-    draw(){
-
-        ctx.beginPath();
-        ctx.arc(
-            this.x,
-            this.y,
-            this.radius,
-            0,
-            Math.PI*2
-        );
-
-        ctx.fillStyle="white";
-        ctx.fill();
-    }
-}
+let balls=[];
 
 
-function launchBall(player,direction){
 
-    const elapsed = Date.now() - player.backswingTime;
-
-    let power;
-
-    if(elapsed > 900 && elapsed < 1200){
-        power = 10; // perfect hit
-    }
-    else if(elapsed > 600 && elapsed < 1500){
-        power = 7; // good hit
-    }
-    else{
-        power = 3; // bad hit
-    }
+class Ball{
 
 
-    balls.push(
-        new Ball(
-            player.x,
-            player.y,
-            power * direction
-        )
-    );
+constructor(x,y,power,direction){
+
+this.x=x;
+this.y=y;
+
+this.vx=power*direction;
+this.vy=-power/2;
+
+this.radius=8;
+
 }
 
 
 
-document.addEventListener("keydown",(e)=>{
+update(){
 
-    if(gameOver) return;
+this.x+=this.vx;
 
+this.y+=this.vy;
 
-    switch(e.key){
-
-        case "a":
-            player1.backswingTime = Date.now();
-            break;
+this.vy+=0.25;
 
 
-        case "d":
+//bounce
 
-            if(player1.backswingTime){
-                launchBall(player1,1);
-                player1.backswingTime=null;
-            }
+if(this.y>490){
 
-            break;
+this.y=490;
+this.vy*=-0.6;
 
-
-        case "ArrowLeft":
-
-            player2.backswingTime = Date.now();
-            break;
+}
 
 
-        case "ArrowRight":
+}
 
-            if(player2.backswingTime){
-                launchBall(player2,-1);
-                player2.backswingTime=null;
-            }
 
-            break;
-    }
+
+draw(){
+
+ctx.beginPath();
+
+ctx.arc(
+this.x,
+this.y,
+this.radius,
+0,
+Math.PI*2
+);
+
+ctx.fillStyle="white";
+
+ctx.fill();
+
+}
+
+
+}
+
+
+
+
+
+function shoot(player,direction){
+
+
+let time=Date.now()-player.chargeStart;
+
+
+let power=Math.min(time/100,12);
+
+
+if(power<3)
+power=3;
+
+
+
+balls.push(
+
+new Ball(
+player.x,
+player.y-30,
+power,
+direction
+)
+
+);
+
+
+player.charging=false;
+
+}
+
+
+
+document.addEventListener(
+"keydown",
+e=>{
+
+
+if(gameOver)return;
+
+
+
+if(e.key==="a"){
+
+player1.charging=true;
+player1.chargeStart=Date.now();
+
+}
+
+
+
+if(e.key==="d" && player1.charging){
+
+shoot(player1,1);
+
+}
+
+
+
+if(e.key==="ArrowLeft"){
+
+player2.charging=true;
+player2.chargeStart=Date.now();
+
+}
+
+
+
+if(e.key==="ArrowRight" && player2.charging){
+
+shoot(player2,-1);
+
+}
+
 
 });
 
 
 
-function hitPlayer(target){
 
-    if(target.shield > 0){
 
-        target.shield--;
 
-    }
 
-    else{
+function hit(target){
 
-        if(gameOver) return;
 
-        gameOver=true;
+target.flash=10;
 
-        setTimeout(()=>{
 
-            alert(
-                target===player1
-                ? "Player 2 Wins!"
-                : "Player 1 Wins!"
-            );
+if(target.shield>0){
 
-        },100);
+target.shield--;
 
-    }
+}
+
+else{
+
+
+gameOver=true;
+
+
+setTimeout(()=>{
+
+
+alert(
+target===player1
+?
+"Player 2 Wins!"
+:
+"Player 1 Wins!"
+);
+
+
+},100);
+
+
+
+}
+
 
 }
 
 
 
 
-function drawStickman(x,y){
-
-    ctx.strokeStyle="black";
-    ctx.lineWidth=4;
 
 
-    // head
-    ctx.beginPath();
-    ctx.arc(x,y-80,20,0,Math.PI*2);
-    ctx.stroke();
+
+function checkHits(){
 
 
-    // body
-    ctx.beginPath();
-    ctx.moveTo(x,y-60);
-    ctx.lineTo(x,y);
-    ctx.stroke();
+balls.forEach(ball=>{
 
 
-    // arms
-    ctx.beginPath();
-    ctx.moveTo(x-20,y-40);
-    ctx.lineTo(x+20,y-20);
-    ctx.stroke();
+if(
 
+Math.abs(ball.x-player1.x)<35 &&
+Math.abs(ball.y-player1.y)<80 &&
+ball.vx<0
 
-    // legs
-    ctx.beginPath();
-    ctx.moveTo(x,y);
-    ctx.lineTo(x-15,y+40);
-    ctx.stroke();
+){
 
+hit(player1);
 
-    ctx.beginPath();
-    ctx.moveTo(x,y);
-    ctx.lineTo(x+15,y+40);
-    ctx.stroke();
-
-
-    // shield
-
-    ctx.strokeStyle="cyan";
-
-    ctx.beginPath();
-    ctx.arc(
-        x,
-        y-30,
-        45,
-        0,
-        Math.PI*2
-    );
-
-    ctx.stroke();
+ball.x=-1000;
 
 }
+
+
+
+
+if(
+
+Math.abs(ball.x-player2.x)<35 &&
+Math.abs(ball.y-player2.y)<80 &&
+ball.vx>0
+
+){
+
+hit(player2);
+
+ball.x=2000;
+
+}
+
+
+});
+
+
+}
+
+
+
+
+
+
+
+function drawStickman(p){
+
+
+
+ctx.strokeStyle="black";
+
+ctx.lineWidth=5;
+
+
+//head
+
+ctx.beginPath();
+
+ctx.arc(
+p.x,
+p.y-90,
+20,
+0,
+Math.PI*2
+);
+
+ctx.stroke();
+
+
+//body
+
+ctx.beginPath();
+
+ctx.moveTo(
+p.x,
+p.y-70
+);
+
+ctx.lineTo(
+p.x,
+p.y
+);
+
+ctx.stroke();
+
+
+//legs
+
+ctx.beginPath();
+
+ctx.moveTo(
+p.x,
+p.y
+);
+
+ctx.lineTo(
+p.x-20,
+p.y+40
+);
+
+ctx.moveTo(
+p.x,
+p.y
+);
+
+ctx.lineTo(
+p.x+20,
+p.y+40
+);
+
+ctx.stroke();
+
+
+//shield
+
+ctx.strokeStyle=
+p.flash>0
+?
+"white"
+:
+"cyan";
+
+
+ctx.beginPath();
+
+ctx.arc(
+p.x,
+p.y-40,
+55,
+0,
+Math.PI*2
+);
+
+ctx.stroke();
+
+
+if(p.flash>0)
+p.flash--;
+
+}
+
+
+
 
 
 
@@ -212,60 +376,47 @@ function drawStickman(x,y){
 function update(){
 
 
-    balls.forEach(ball=>{
-        ball.update();
-    });
+
+balls.forEach(
+b=>b.update()
+);
+
+
+checkHits();
+
+
+balls=
+balls.filter(
+b=>b.x>-100&&b.x<1300
+);
 
 
 
-    balls.forEach(ball=>{
+document.getElementById("shield1").innerHTML=
+player1.shield;
 
 
-        if(
-            Math.abs(ball.x-player2.x)<30 &&
-            ball.vx>0
-        ){
-
-            hitPlayer(player2);
-
-            ball.x=2000;
-
-        }
+document.getElementById("shield2").innerHTML=
+player2.shield;
 
 
 
-        if(
-            Math.abs(ball.x-player1.x)<30 &&
-            ball.vx<0
-        ){
-
-            hitPlayer(player1);
-
-            ball.x=-2000;
-
-        }
+let charging=
+player1.charging
+?
+(Date.now()-player1.chargeStart)/1200
+:
+0;
 
 
-    });
-
-
-
-    balls = balls.filter(
-        ball =>
-        ball.x>-100 &&
-        ball.x<1300
-    );
-
-
-
-    document.getElementById("shield1").textContent =
-        player1.shield;
-
-
-    document.getElementById("shield2").textContent =
-        player2.shield;
+document.getElementById("power").style.width=
+Math.min(charging*100,100)+"%";
 
 }
+
+
+
+
 
 
 
@@ -273,57 +424,61 @@ function update(){
 function draw(){
 
 
-    ctx.clearRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
+ctx.clearRect(
+0,
+0,
+1200,
+600
+);
 
 
 
-    // grass
+ctx.fillStyle="green";
 
-    ctx.fillStyle="green";
-    ctx.fillRect(
-        0,
-        500,
-        1200,
-        100
-    );
-
-
-
-    drawStickman(
-        player1.x,
-        player1.y
-    );
-
-
-    drawStickman(
-        player2.x,
-        player2.y
-    );
+ctx.fillRect(
+0,
+500,
+1200,
+100
+);
 
 
 
-    balls.forEach(ball=>{
-        ball.draw();
-    });
+drawStickman(player1);
+
+drawStickman(player2);
+
+
+
+balls.forEach(
+b=>b.draw()
+);
+
 
 }
+
+
 
 
 
 function loop(){
 
-    update();
+update();
 
-    draw();
+draw();
 
-    requestAnimationFrame(loop);
+requestAnimationFrame(loop);
 
 }
+
+
+
+function restartGame(){
+
+location.reload();
+
+}
+
 
 
 loop();
