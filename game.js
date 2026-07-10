@@ -108,40 +108,41 @@ function calculatePower(player){
     Date.now()-player.chargeStart;
 
 
-    // seconds held
-
     let charge =
     holdTime/1000;
 
 
-    // sweet spot around 0.8 seconds
-
     let distance;
 
 
-    if(charge < 0.5){
+    // weak shots
 
-        // weak shot
+    if(charge < 1.2){
 
-        distance = 5 + charge*6;
+        distance =
+        5 + charge*5;
+
+    }
+
+
+    // SWEET SPOT
+    // wider and easier
+
+    else if(charge < 2.2){
+
+        distance =
+        11 + (charge-1.2)*2;
 
     }
 
-    else if(charge < 1.1){
 
-        // perfect zone
-
-        distance = 11 + 
-        (charge-0.5)*4;
-
-    }
+    // overpowered shots
 
     else{
 
-        // too powerful - overshoot
-
-        distance = 15 +
-        (charge-1.1)*8;
+        distance =
+        13 +
+        (charge-2.2)*4;
 
     }
 
@@ -149,7 +150,6 @@ function calculatePower(player){
     return Math.min(distance,22);
 
 }
-
 
 
 
