@@ -1,44 +1,48 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-let gameOver = false;
+let gameOver=false;
 
 
-const player1 = {
+const player1={
     x:150,
     y:450,
     shield:10,
     charging:false,
     chargeStart:0,
     flash:0,
-    velocityY:0
+    velocityY:0,
+    explosions:3,
+    explodeReady:false
 };
 
 
-const player2 = {
+const player2={
     x:1050,
     y:450,
     shield:10,
     charging:false,
     chargeStart:0,
     flash:0,
-    velocityY:0
+    velocityY:0,
+    explosions:3,
+    explodeReady:false
 };
 
 
 let balls=[];
 
 
-// keyboard state
-
 let keys={};
 
-document.addEventListener("keydown", e=>{
+
+
+document.addEventListener("keydown",e=>{
 
     keys[e.key]=true;
 
 
-    if(gameOver) return;
+    if(gameOver)return;
 
 
     // Player 1 charge
@@ -51,6 +55,7 @@ document.addEventListener("keydown", e=>{
     }
 
 
+
     // Player 2 charge
 
     if(e.key==="ArrowLeft" && !player2.charging){
@@ -61,16 +66,35 @@ document.addEventListener("keydown", e=>{
     }
 
 
+
+    // explosion buttons
+
+    if(e.key==="e" && player1.explosions>0){
+
+        player1.explodeReady=true;
+
+    }
+
+
+
+    if(e.key==="Enter" && player2.explosions>0){
+
+        player2.explodeReady=true;
+
+    }
+
+
 });
 
 
-document.addEventListener("keyup", e=>{
+
+
+
+document.addEventListener("keyup",e=>{
 
 
     keys[e.key]=false;
 
-
-    // release swing
 
     if(e.key==="a"){
 
@@ -92,70 +116,89 @@ document.addEventListener("keyup", e=>{
 
 
 
-class Ball {
-
-
-    constructor(x,y,power,direction){
-
-        this.x=x;
-        this.y=y;
-
-        this.vx=power*direction;
-
-        this.vy=-power*1.15;
-
-        this.radius=8;
-
-        this.bounced=false;
-
-    }
 
 
 
-    update(){
 
-        this.x+=this.vx;
-
-        this.y+=this.vy;
+class Ball{
 
 
-        this.vy+=0.32;
+constructor(x,y,power,direction){
 
 
-
-        if(this.y>=490){
-
-            this.y=490;
-
-            this.vy*=-0.45;
-
-            this.bounced=true;
-
-        }
-
-    }
+    this.x=x;
+    this.y=y;
 
 
+    this.vx=power*direction;
 
-    draw(){
+    this.vy=-power*1.15;
 
-        ctx.beginPath();
 
-        ctx.arc(
-            this.x,
-            this.y,
-            this.radius,
-            0,
-            Math.PI*2
-        );
+    this.radius=8;
 
-        ctx.fillStyle="white";
 
-        ctx.fill();
-
-    }
+    this.bounced=false;
 
 }
+
+
+
+update(){
+
+
+    this.x+=this.vx;
+
+    this.y+=this.vy;
+
+
+    this.vy+=0.32;
+
+
+
+    if(this.y>=490){
+
+
+        this.y=490;
+
+        this.vy*=-0.45;
+
+        this.bounced=true;
+
+    }
+
+
+}
+
+
+
+draw(){
+
+
+    ctx.beginPath();
+
+
+    ctx.arc(
+        this.x,
+        this.y,
+        this.radius,
+        0,
+        Math.PI*2
+    );
+
+
+    ctx.fillStyle="white";
+
+    ctx.fill();
+
+
+}
+
+
+}
+
+
+
 
 
 
@@ -166,43 +209,94 @@ class Ball {
 function calculatePower(player){
 
 
-    let hold =
-    (Date.now()-player.chargeStart)/1000;
+let hold =
+(Date.now()-player.chargeStart)/1000;
 
 
-    let power;
+
+let power;
 
 
-    // weak
 
-    if(hold<1){
+if(hold<1){
 
-        power=5+hold*4;
-
-    }
-
-
-    // sweet spot
-
-    else if(hold<2.5){
-
-        power=10+(hold-1)*1.5;
-
-    }
-
-
-    // too strong
-
-    else{
-
-        power=14+(hold-2.5)*5;
-
-    }
-
-
-    return Math.min(power,22);
+    power=5+hold*4;
 
 }
+
+
+else if(hold<2.5){
+
+    power=10+(hold-1)*1.5;
+
+}
+
+
+else{
+
+    power=14+(hold-2.5)*5;
+
+}
+
+
+
+return Math.min(power,22);
+
+
+}
+
+
+
+
+
+
+
+
+
+function explodeShot(player,direction,power){
+
+
+
+let angles=[
+
+-1.0,
+-0.45,
+0.45,
+1.0
+
+];
+
+
+
+angles.forEach(angle=>{
+
+
+let ball=new Ball(
+
+player.x,
+player.y-50,
+power,
+direction
+
+);
+
+
+
+ball.vy += angle*power;
+
+
+
+balls.push(ball);
+
+
+
+});
+
+
+}
+
+
+
 
 
 
@@ -213,11 +307,33 @@ function calculatePower(player){
 function swing(player,direction){
 
 
-    if(!player.charging)
-    return;
+if(!player.charging)
+return;
 
 
-    let power=calculatePower(player);
+
+let power=calculatePower(player);
+
+
+
+if(player.explodeReady && player.explosions>0){
+
+
+    explodeShot(
+        player,
+        direction,
+        power
+    );
+
+
+    player.explosions--;
+
+    player.explodeReady=false;
+
+
+}
+
+else{
 
 
     balls.push(
@@ -231,10 +347,15 @@ function swing(player,direction){
 
     );
 
+}
 
-    player.charging=false;
+
+
+player.charging=false;
+
 
 }
+
 
 
 
@@ -246,72 +367,72 @@ function swing(player,direction){
 function updatePlayers(){
 
 
-    // gravity
 
-    player1.velocityY+=0.25;
-    player2.velocityY+=0.25;
+player1.velocityY+=0.25;
 
-
-
-    // floating
-
-    if(keys["w"]){
-
-        player1.velocityY-=0.45;
-
-    }
-
-
-    if(keys["ArrowUp"]){
-
-        player2.velocityY-=0.45;
-
-    }
+player2.velocityY+=0.25;
 
 
 
-    player1.y+=player1.velocityY;
-    player2.y+=player2.velocityY;
+if(keys["w"]){
+
+player1.velocityY-=0.45;
+
+}
 
 
 
-    // limits
+if(keys["ArrowUp"]){
 
+player2.velocityY-=0.45;
 
-    if(player1.y<150){
-
-        player1.y=150;
-        player1.velocityY=0;
-
-    }
-
-
-    if(player2.y<150){
-
-        player2.y=150;
-        player2.velocityY=0;
-
-    }
+}
 
 
 
-    if(player1.y>450){
+player1.y+=player1.velocityY;
 
-        player1.y=450;
-        player1.velocityY=0;
-
-    }
+player2.y+=player2.velocityY;
 
 
-    if(player2.y>450){
 
-        player2.y=450;
-        player2.velocityY=0;
+if(player1.y<150){
 
-    }
+player1.y=150;
+player1.velocityY=0;
+
+}
+
+
+
+if(player2.y<150){
+
+player2.y=150;
+player2.velocityY=0;
+
+}
+
+
+
+if(player1.y>450){
+
+player1.y=450;
+player1.velocityY=0;
+
+}
+
+
+
+if(player2.y>450){
+
+player2.y=450;
+player2.velocityY=0;
+
+}
 
 
 }
+
 
 
 
@@ -323,40 +444,47 @@ function updatePlayers(){
 function hitPlayer(target){
 
 
-    target.flash=10;
+target.flash=10;
 
 
-    if(target.shield>0){
 
-        target.shield--;
-
-    }
-
-    else{
+if(target.shield>0){
 
 
-        gameOver=true;
+target.shield--;
 
-
-        setTimeout(()=>{
-
-            alert(
-
-            target===player1
-            ?
-            "Player 2 Wins!"
-            :
-            "Player 1 Wins!"
-
-            );
-
-
-        },100);
-
-
-    }
 
 }
+
+else{
+
+
+gameOver=true;
+
+
+setTimeout(()=>{
+
+
+alert(
+
+target===player1
+?
+"Player 2 Wins!"
+:
+"Player 1 Wins!"
+
+);
+
+
+},100);
+
+
+}
+
+
+
+}
+
 
 
 
@@ -368,52 +496,58 @@ function hitPlayer(target){
 function checkHits(){
 
 
-    balls.forEach(ball=>{
+
+balls.forEach(ball=>{
 
 
-        // bounced balls harmless
-
-        if(ball.bounced)
-        return;
-
-
-
-        if(
-
-        Math.abs(ball.x-player1.x)<40 &&
-        Math.abs(ball.y-player1.y)<90 &&
-        ball.vx<0
-
-        ){
-
-            hitPlayer(player1);
-
-            ball.x=-2000;
-
-        }
+if(ball.bounced)
+return;
 
 
 
+if(
 
-        if(
+Math.abs(ball.x-player1.x)<40 &&
+Math.abs(ball.y-player1.y)<90 &&
+ball.vx<0
 
-        Math.abs(ball.x-player2.x)<40 &&
-        Math.abs(ball.y-player2.y)<90 &&
-        ball.vx>0
-
-        ){
-
-            hitPlayer(player2);
-
-            ball.x=2000;
-
-        }
+){
 
 
-    });
+hitPlayer(player1);
+
+ball.x=-2000;
 
 
 }
+
+
+
+
+
+if(
+
+Math.abs(ball.x-player2.x)<40 &&
+Math.abs(ball.y-player2.y)<90 &&
+ball.vx>0
+
+){
+
+
+hitPlayer(player2);
+
+ball.x=2000;
+
+
+}
+
+
+});
+
+
+
+}
+
 
 
 
@@ -425,105 +559,104 @@ function checkHits(){
 function drawStickman(p){
 
 
-    ctx.lineWidth=5;
+ctx.lineWidth=5;
 
-    ctx.strokeStyle="black";
-
-
-
-    // head
-
-    ctx.beginPath();
-
-    ctx.arc(
-        p.x,
-        p.y-90,
-        20,
-        0,
-        Math.PI*2
-    );
-
-    ctx.stroke();
+ctx.strokeStyle="black";
 
 
 
-    // body
+ctx.beginPath();
 
-    ctx.beginPath();
+ctx.arc(
+p.x,
+p.y-90,
+20,
+0,
+Math.PI*2
+);
 
-    ctx.moveTo(
-        p.x,
-        p.y-70
-    );
-
-    ctx.lineTo(
-        p.x,
-        p.y
-    );
-
-    ctx.stroke();
+ctx.stroke();
 
 
 
-    // legs
+ctx.beginPath();
 
-    ctx.beginPath();
+ctx.moveTo(
+p.x,
+p.y-70
+);
 
-    ctx.moveTo(
-        p.x,
-        p.y
-    );
+ctx.lineTo(
+p.x,
+p.y
+);
 
-    ctx.lineTo(
-        p.x-20,
-        p.y+40
-    );
-
-
-    ctx.moveTo(
-        p.x,
-        p.y
-    );
-
-    ctx.lineTo(
-        p.x+20,
-        p.y+40
-    );
-
-
-    ctx.stroke();
+ctx.stroke();
 
 
 
-    // shield
+ctx.beginPath();
 
-    ctx.strokeStyle =
-    p.flash>0
-    ?
-    "white"
-    :
-    "cyan";
+ctx.moveTo(
+p.x,
+p.y
+);
 
-
-    ctx.beginPath();
-
-    ctx.arc(
-        p.x,
-        p.y-40,
-        55,
-        0,
-        Math.PI*2
-    );
+ctx.lineTo(
+p.x-20,
+p.y+40
+);
 
 
-    ctx.stroke();
+ctx.moveTo(
+p.x,
+p.y
+);
+
+ctx.lineTo(
+p.x+20,
+p.y+40
+);
+
+
+ctx.stroke();
 
 
 
-    if(p.flash>0)
-    p.flash--;
+
+// shield
+
+ctx.strokeStyle=
+
+p.flash>0
+?
+"white"
+:
+"cyan";
+
+
+ctx.beginPath();
+
+
+ctx.arc(
+p.x,
+p.y-40,
+55,
+0,
+Math.PI*2
+);
+
+
+ctx.stroke();
+
+
+
+if(p.flash>0)
+p.flash--;
+
 
 }
+
 
 
 
@@ -535,73 +668,86 @@ function drawStickman(p){
 function update(){
 
 
-    updatePlayers();
+updatePlayers();
 
 
 
-    balls.forEach(
-        ball=>ball.update()
-    );
+balls.forEach(
+ball=>ball.update()
+);
 
 
 
-    checkHits();
+checkHits();
 
 
 
-    balls =
-    balls.filter(
-
-        ball =>
-        ball.x>-200 &&
-        ball.x<1400 &&
-        ball.y<700
-
-    );
+balls=
+balls.filter(
+ball=>
+ball.x>-200 &&
+ball.x<1400 &&
+ball.y<700
+);
 
 
 
-    document.getElementById("shield1").textContent=
-    player1.shield;
+
+document.getElementById("shield1").textContent=
+player1.shield;
 
 
-    document.getElementById("shield2").textContent=
-    player2.shield;
-
-
-
-    let power1=0;
-    let power2=0;
+document.getElementById("shield2").textContent=
+player2.shield;
 
 
 
-    if(player1.charging){
-
-        power1=
-        (Date.now()-player1.chargeStart)/2500;
-
-    }
+document.getElementById("explode1").textContent=
+player1.explosions;
 
 
-
-    if(player2.charging){
-
-        power2=
-        (Date.now()-player2.chargeStart)/2500;
-
-    }
+document.getElementById("explode2").textContent=
+player2.explosions;
 
 
 
-    document.getElementById("power1").style.width=
-    Math.min(power1*100,100)+"%";
 
 
-    document.getElementById("power2").style.width=
-    Math.min(power2*100,100)+"%";
+let power1=0;
+
+let power2=0;
+
+
+
+if(player1.charging){
+
+power1=
+(Date.now()-player1.chargeStart)/2500;
+
+}
+
+
+
+if(player2.charging){
+
+power2=
+(Date.now()-player2.chargeStart)/2500;
+
+}
+
+
+
+
+document.getElementById("power1").style.width=
+Math.min(power1*100,100)+"%";
+
+
+document.getElementById("power2").style.width=
+Math.min(power2*100,100)+"%";
 
 
 }
+
 
 
 
@@ -613,37 +759,40 @@ function update(){
 function draw(){
 
 
-    ctx.clearRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
+ctx.clearRect(
+0,
+0,
+canvas.width,
+canvas.height
+);
 
 
 
-    ctx.fillStyle="green";
+ctx.fillStyle="green";
 
-    ctx.fillRect(
-        0,
-        500,
-        1200,
-        100
-    );
-
-
-
-    drawStickman(player1);
-
-    drawStickman(player2);
+ctx.fillRect(
+0,
+500,
+1200,
+100
+);
 
 
 
-    balls.forEach(
-        ball=>ball.draw()
-    );
+drawStickman(player1);
+
+drawStickman(player2);
+
+
+
+balls.forEach(
+ball=>ball.draw()
+);
+
+
 
 }
+
 
 
 
@@ -653,11 +802,11 @@ function draw(){
 
 function loop(){
 
-    update();
+update();
 
-    draw();
+draw();
 
-    requestAnimationFrame(loop);
+requestAnimationFrame(loop);
 
 }
 
@@ -665,10 +814,11 @@ function loop(){
 
 function restartGame(){
 
-    location.reload();
+location.reload();
 
 }
 
 
 
 loop();
+ 
