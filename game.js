@@ -1,16 +1,3 @@
-const canvas = document.getElementById("gameCanvas");
-
-const ctx = canvas.getContext("2d");
-
-ctx.fillStyle = "green";
-
-ctx.fillRect(0,500,1200,100);
-
-ctx.fillStyle = "black";
-
-ctx.font = "40px Arial";
-
-ctx.fillText("GAME JS IS RUNNING",400,300);
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
